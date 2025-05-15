@@ -1,9 +1,6 @@
 #!bin/bash/
 
 # Building docker images
-cd ./scada_hmi_docker/
-docker build ./ -t scada_hmi_sswat_image
-cd ..
 
 cd ./physical_sim_docker/
 docker build ./ -t sim_sswat_image
@@ -22,4 +19,4 @@ docker build ./ -t plc3_sswat_image
 cd ..
 
 # Running docker containers
-docker-compose up -d
+sudo docker-compose up -d
