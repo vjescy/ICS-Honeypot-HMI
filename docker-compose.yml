@@ -1,25 +1,99 @@
-version: '3'
-services: 
-    database:
-        container_name: mysql
-        image: mysql/mysql-server:5.7
-        ports:
-            - "3306:3306"
-        environment: 
-            - MYSQL_ROOT_PASSWORD=root
-            - MYSQL_USER=root
-            - MYSQL_PASSWORD=root
-            - MYSQL_DATABASE=scadalts
-        expose: ["3306"]
-        volumes:
-            -   ./docker/volumes/databases:/home/
-    scadalts:
-        image: scadalts/scadalts:latest
-        ports: 
-            - "8080:8080"
-            - "502:502"
-        depends_on: 
-            - database
-        expose: ["8080", "8000", "502"]
-        links:
-            - database:database
+version: '3.8'
+
+services:
+  # --- MySQL Database ---
+  database:
+    container_name: mysql
+    image: mysql/mysql-server:5.7
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=scadalts
+    expose:
+      - "3306"
+    volumes:
+      - ./docker/volumes/databases:/home/
+    networks:
+      - my_bridge_network
+
+  # --- SCADA-LTS ---
+  scadalts:
+    image: scadalts/scadalts:latest
+    ports:
+      - "8080:8080"
+      - "502:502"
+    depends_on:
+      - database
+    expose:
+      - "8080"
+      - "8000"
+      - "502"
+    networks:
+      - my_bridge_network
+
+  # --- PLC 1 ---
+  plc1:
+    build:
+      context: ./plc_1_docker
+    image: plc1_sswat_image
+    container_name: plc1_sswat
+    ports:
+      - "2502:502"
+      - "28080:8080"
+      - "29090:9090"
+    networks:
+      my_bridge_network:
+        ipv4_address: 172.20.0.3
+
+  # --- PLC 2 ---
+  plc2:
+    build:
+      context: ./plc_2_docker
+    image: plc2_sswat_image
+    container_name: plc2_sswat
+    ports:
+      - "3502:502"
+      - "38080:8080"
+      - "39090:9090"
+    networks:
+      my_bridge_network:
+        ipv4_address: 172.20.0.4
+
+  # --- PLC 3 ---
+  plc3:
+    build:
+      context: ./plc_3_docker
+    image: plc3_sswat_image
+    container_name: plc3_sswat
+    ports:
+      - "4502:502"
+      - "48080:8080"
+      - "49090:9090"
+    networks:
+      my_bridge_network:
+        ipv4_address: 172.20.0.5
+
+  # --- Simulator ---
+  sim:
+    build:
+      context: ./physical_sim_docker
+    image: sim_sswat_image
+    container_name: sim_sswat
+    ports:
+      - "5502:502"
+      - "58080:8080"
+      - "59090:9090"
+    networks:
+      - my_bridge_network
+
+networks:
+  my_bridge_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.20.0.0/16"
+          gateway: "172.20.0.1"
